@@ -45,9 +45,8 @@ namespace llvm {
       // No relation with Mips Lo register
       Lo,
 
-      // Highest/Higher relocation nodes TO DO
-      Highest,
-      Higher,
+      // additional node used to represent additional Highest/Higher
+      // relocation operations. Hi, Lo are reused in this context.
       HiLo,
 
       // Handle gp_rel (small data/bss sections) relocation.

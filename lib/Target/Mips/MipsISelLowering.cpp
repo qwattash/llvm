@@ -2871,7 +2871,7 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   const TargetFrameLowering *TFL = Subtarget.getFrameLowering();
   MipsFunctionInfo *FuncInfo = MF.getInfo<MipsFunctionInfo>();
   bool IsPIC = getTargetMachine().getRelocationModel() == Reloc::PIC_;
-  //bool AbiCalls = Subtarget.isABICalls();
+  bool AbiCalls = Subtarget.isABICalls();
 
   // Analyze operands of the call, assigning locations to each operand.
   SmallVector<CCValAssign, 16> ArgLocs;
@@ -3071,14 +3071,18 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   // If the callee is a GlobalAddress/ExternalSymbol node (quite common, every
   // direct call is) turn it into a TargetGlobalAddress/TargetExternalSymbol
   // node so that legalize doesn't hack it.
-  bool IsPICCall = (ABI.IsN64() || IsPIC);// && AbiCalls; // true if calls are translated to
-  // jalr $25
+  // true if calls are translated to jalr $25
+  bool IsPICCall = (ABI.IsN64() || IsPIC) && AbiCalls;
+  
   bool GlobalOrExternal = false, InternalLinkage = false, IsCallReloc = false;
   SDValue CalleeLo;
   EVT Ty = Callee.getValueType();
 
   if (GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee)) {
-    if (IsPICCall) {
+    if (!AbiCalls) {
+      Callee = getAddrNonPIC(G, DL, Ty, DAG, ABI.IsN64());
+    }
+    else if (IsPICCall) {
       const GlobalValue *Val = G->getGlobal();
       InternalLinkage = Val->hasInternalLinkage();
 
@@ -3103,7 +3107,10 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   else if (ExternalSymbolSDNode *S = dyn_cast<ExternalSymbolSDNode>(Callee)) {
     const char *Sym = S->getSymbol();
 
-    if (!ABI.IsN64() && !IsPIC) // !N64 && static
+    if (!AbiCalls) {
+      Callee = getAddrNonPIC(S, DL, Ty, DAG, ABI.IsN64());
+    }
+    else if (!IsPICCall) //(!ABI.IsN64() && !IsPIC) // !N64 && static
       Callee = DAG.getTargetExternalSymbol(
           Sym, getPointerTy(DAG.getDataLayout()), MipsII::MO_NO_FLAG);
     else if (LargeGOT) {
