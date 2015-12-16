@@ -584,6 +584,8 @@ void MipsAsmPrinter::printOperand(const MachineInstr *MI, int opNum,
   case MipsII::MO_GOT_DISP: O << "%got_disp("; break;
   case MipsII::MO_GOT_PAGE: O << "%got_page("; break;
   case MipsII::MO_GOT_OFST: O << "%got_ofst("; break;
+  case MipsII::MO_HIGHER: O << "%higher("; break;
+  case MipsII::MO_HIGHEST: O << "%highest("; break;
   }
 
   switch (MO.getType()) {
