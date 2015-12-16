@@ -380,41 +380,12 @@ namespace llvm {
 			      DAG.getNode(MipsISD::HiLo, DL, Ty, Lo),
 			      TmpNode);
 	return TmpNode;
-	// // TO DO can better express this in the instrinfo.td
-	// SDValue TmpNode;
-	// // TO DO MipsISD::Highest and MipsISD::Higher do not exist,
-	// // is there a reason or must be added?
-	// TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
-	// 		      DAG.getNode(MipsISD::Highest, DL, Ty, Highest),
-	// 		      DAG.getNode(MipsISD::Higher, DL, Ty, Higher));
-	// // TO DO
-	// // what EVT should we be passing?
-	// // getConstant vs getTargetConstant, any difference?
-	// TmpNode = DAG.getNode(ISD::DSLL, DL, Ty, TmpNode,
-	// 		      DAG.getConstant(16, MVT::i32));
-	// TmpNode = DAG.getNode(ISD::ADD, DL, Ty, TmpNode, Hi);
-	// TmpNode = DAG.getNode(ISD::DSLL, DL, Ty, TmpNode,
-	// 		      DAG.getConstant(16, MVT::i32));
-	// return DAG.getNode(ISD::ADD, DL, Ty, TmpNode, Lo);
       }
       else
 	return DAG.getNode(ISD::ADD, DL, Ty,
 			   DAG.getNode(MipsISD::Hi, DL, Ty, Hi),
 			   DAG.getNode(MipsISD::Lo, DL, Ty, Lo));
     }
-
-    // This method creates the following nodes, which are necessary for
-    // computing a symbol's address in non-PIC mode with a 64-bit target
-    //
-    // template <class NodeTy>
-    // SDValue getAddrNonPIC64(NodeTy *N, SDLoc DL, EVT Ty,
-    // 			    SelectionDAG &DAG) const {
-
-    //   SDValue Hi = getTargetNode(N, Ty, DAG, MipsII::MO_ABS_HI);
-    //   SDValue Lo = getTargetNode(N, Ty, DAG, MipsII::MO_ABS_LO);
-
-
-    // }
 
     // This method creates the following nodes, which are necessary for
     // computing a symbol's address using gp-relative addressing:

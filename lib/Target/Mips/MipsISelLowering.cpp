@@ -1832,11 +1832,17 @@ SDValue MipsTargetLowering::lowerGlobalAddress(SDValue Op,
   EVT Ty = Op.getValueType();
   GlobalAddressSDNode *N = cast<GlobalAddressSDNode>(Op);
   const GlobalValue *GV = N->getGlobal();
+  bool AbiCalls = Subtarget.isABICalls();
+  bool IsPIC = getTargetMachine().getRelocationModel() == Reloc::PIC_;
 
-  if (getTargetMachine().getRelocationModel() != Reloc::PIC_ && !ABI.IsN64()) {
+  if (!AbiCalls)
+    // static hi/lo relocation
+    return getAddrNonPIC(N, SDLoc(N), Ty, DAG, ABI.IsN64());
+  
+  if (!IsPIC && !ABI.IsN64()) {
     const MipsTargetObjectFile *TLOF =
-        static_cast<const MipsTargetObjectFile *>(
-            getTargetMachine().getObjFileLowering());
+      static_cast<const MipsTargetObjectFile *>
+      (getTargetMachine().getObjFileLowering());
     if (TLOF->IsGlobalInSmallSection(GV, getTargetMachine()))
       // %gp_rel relocation
       return getAddrGPRel(N, SDLoc(N), Ty, DAG);
@@ -2865,7 +2871,7 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   const TargetFrameLowering *TFL = Subtarget.getFrameLowering();
   MipsFunctionInfo *FuncInfo = MF.getInfo<MipsFunctionInfo>();
   bool IsPIC = getTargetMachine().getRelocationModel() == Reloc::PIC_;
-  bool AbiCalls = Subtarget.isABICalls();
+  //bool AbiCalls = Subtarget.isABICalls();
 
   // Analyze operands of the call, assigning locations to each operand.
   SmallVector<CCValAssign, 16> ArgLocs;
@@ -3065,8 +3071,8 @@ MipsTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   // If the callee is a GlobalAddress/ExternalSymbol node (quite common, every
   // direct call is) turn it into a TargetGlobalAddress/TargetExternalSymbol
   // node so that legalize doesn't hack it.
-  bool IsPICCall = (ABI.IsN64() || IsPIC) && AbiCalls; // true if calls are translated to
-                                           // jalr $25
+  bool IsPICCall = (ABI.IsN64() || IsPIC);// && AbiCalls; // true if calls are translated to
+  // jalr $25
   bool GlobalOrExternal = false, InternalLinkage = false, IsCallReloc = false;
   SDValue CalleeLo;
   EVT Ty = Callee.getValueType();
