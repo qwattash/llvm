@@ -460,6 +460,7 @@ def : MipsPat<(i64 (extloadi16 addr:$src)), (LH64 addr:$src)>;
 def : MipsPat<(i64 (extloadi32 addr:$src)), (LW64 addr:$src)>;
 
 // hi/lo relocs
+
 def : MipsPat<(MipsHi tglobaladdr:$in), (LUi64 tglobaladdr:$in)>;
 def : MipsPat<(MipsHi tblockaddress:$in), (LUi64 tblockaddress:$in)>;
 def : MipsPat<(MipsHi tjumptable:$in), (LUi64 tjumptable:$in)>;
@@ -486,63 +487,39 @@ def : MipsPat<(add GPR64:$hi, (MipsLo tconstpool:$lo)),
 def : MipsPat<(add GPR64:$hi, (MipsLo tglobaltlsaddr:$lo)),
               (DADDiu GPR64:$hi, tglobaltlsaddr:$lo)>;
 
-// highest/higher relocs TO DO
+// highest/higher relocs
 
-// additional nodes for static relocations
+// alternate Lower node for the lower 32-bit part of 64-bit relocations
+def Mips64Lower : SDNode<"MipsISD::Lower", SDTIntUnaryOp>;
 
-// can be removed
-def MipsHighest : SDNode<"MipsISD::Highest", SDTIntUnaryOp>;
-def MipsHigher : SDNode<"MipsISD::Higher", SDTIntUnaryOp>;
-
-// alternate MipsHi and MipsLo operations for 64-bit relocations
-def Mips64HiLo : SDNode<"MipsISD::HiLo", SDTIntUnaryOp>;
-
-// these can be removed and use Hi and Lo as the operation is the same !
-// def : MipsPat<(MipsHighest tglobaladdr:$in), (LUi64 tglobaladdr:$in)>;
-// def : MipsPat<(MipsHighest tblockaddress:$in), (LUi64 tblockaddress:$in)>;
-// def : MipsPat<(MipsHighest tjumptable:$in), (LUi64 tjumptable:$in)>;
-// def : MipsPat<(MipsHighest tconstpool:$in), (LUi64 tconstpool:$in)>;
-// def : MipsPat<(MipsHighest tglobaltlsaddr:$in), (LUi64 tglobaltlsaddr:$in)>;
-// def : MipsPat<(MipsHighest texternalsym:$in), (LUi64 texternalsym:$in)>;
-
-// def : MipsPat<(MipsHigher tglobaladdr:$in), (DADDiu ZERO_64, tglobaladdr:$in)>;
-// def : MipsPat<(MipsHigher tblockaddress:$in), (DADDiu ZERO_64, tblockaddress:$in)>;
-// def : MipsPat<(MipsHigher tjumptable:$in), (DADDiu ZERO_64, tjumptable:$in)>;
-// def : MipsPat<(MipsHigher tconstpool:$in), (DADDiu ZERO_64, tconstpool:$in)>;
-// def : MipsPat<(MipsHigher tglobaltlsaddr:$in),
-//               (DADDiu ZERO_64, tglobaltlsaddr:$in)>;
-
-// this should be adapted for the relocation chaining as binary operator
-// may just load as
-// daddiu $xx, 0, imm
-// as the pattern
-// add $xx, HiLo imm -> dsll $xx, 16; daddiu $xx, $xx, imm
-// builds the correct representation
-def : MipsPat<(Mips64HiLo tglobaladdr:$in),
+def : MipsPat<(Mips64Lower tglobaladdr:$in),
               (DADDiu ZERO_64, tglobaladdr:$in)>;
-def : MipsPat<(Mips64HiLo tblockaddress:$in),
+def : MipsPat<(Mips64Lower tblockaddress:$in),
               (DADDiu ZERO_64, tblockaddress:$in)>;
-def : MipsPat<(Mips64HiLo tjumptable:$in),
+def : MipsPat<(Mips64Lower tjumptable:$in),
               (DADDiu ZERO_64, tjumptable:$in)>;
-def : MipsPat<(Mips64HiLo tconstpool:$in),
+def : MipsPat<(Mips64Lower tconstpool:$in),
               (DADDiu ZERO_64, tconstpool:$in)>;
-def : MipsPat<(Mips64HiLo tglobaltlsaddr:$in),
+def : MipsPat<(Mips64Lower tglobaltlsaddr:$in),
               (DADDiu ZERO_64, tglobaltlsaddr:$in)>;
-def : MipsPat<(Mips64HiLo texternalsym:$in),
+def : MipsPat<(Mips64Lower texternalsym:$in),
               (DADDiu ZERO_64, texternalsym:$in)>;
 
-def : MipsPat<(add GPR64:$hi, (Mips64HiLo tglobaladdr:$lo)),
-              (DADDiu (DSLL GPR64:$hi, 16), tglobaladdr:$lo)>;
-def : MipsPat<(add GPR64:$hi, (Mips64HiLo tblockaddress:$lo)),
-              (DADDiu (DSLL GPR64:$hi, 16), tblockaddress:$lo)>;
-def : MipsPat<(add GPR64:$hi, (Mips64HiLo tjumptable:$lo)),
-              (DADDiu (DSLL GPR64:$hi, 16), tjumptable:$lo)>;
-def : MipsPat<(add GPR64:$hi, (Mips64HiLo tconstpool:$lo)),
-              (DADDiu (DSLL GPR64:$hi, 16), tconstpool:$lo)>;
-def : MipsPat<(add GPR64:$hi, (Mips64HiLo tglobaltlsaddr:$lo)),
-              (DADDiu (DSLL GPR64:$hi, 16), tglobaltlsaddr:$lo)>;
-def : MipsPat<(add GPR64:$hi, (Mips64HiLo texternalsym:$lo)),
-              (DADDiu (DSLL GPR64:$hi, 16), texternalsym:$lo)>;
+class MipsRelocLowerPat<SDNode addr> :
+      MipsPat<(add GPR64:$hi, (Mips64Lower addr:$lo)),
+              (DADDiu (DSLL GPR64:$hi, 16), addr:$lo)>;
+
+// class MipsRelocLowerLoadPat<SDNode addr> :
+//       MipsPat<(i64 (extloadi32 (add GPR64:$hi, (Mips64Lower addr:$lo)))),
+//       (LW64 GPR64, \\base:(DSLL GPR64:$hi, 16) offset:addr:$lo\\)>;
+
+def : MipsRelocLowerPat<tglobaladdr>;
+//def : MipsRelocLowerLoadPat<tglobaladdr>;
+def : MipsRelocLowerPat<tblockaddress>;
+def : MipsRelocLowerPat<tjumptable>;
+def : MipsRelocLowerPat<tconstpool>;
+def : MipsRelocLowerPat<tglobaltlsaddr>;
+def : MipsRelocLowerPat<texternalsym>;
 
 // end Hi/Lo 64 bit relocations
 

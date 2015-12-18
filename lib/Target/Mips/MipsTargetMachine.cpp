@@ -253,7 +253,7 @@ TargetPassConfig *MipsTargetMachine::createPassConfig(PassManagerBase &PM) {
 }
 
 void MipsPassConfig::addPreRegAlloc() {
-  if (getOptLevel() == CodeGenOpt::None)
+  if (getOptLevel() == CodeGenOpt::None && getMipsSubtarget().isABICalls())
     addPass(createMipsOptimizePICCallPass(getMipsTargetMachine()));
 
   MipsTargetMachine &TM = getMipsTargetMachine();
@@ -284,7 +284,9 @@ bool MipsPassConfig::addInstSelector() {
 }
 
 void MipsPassConfig::addMachineSSAOptimization() {
-  addPass(createMipsOptimizePICCallPass(getMipsTargetMachine()));
+  if (getMipsSubtarget().isABICalls()) {
+    addPass(createMipsOptimizePICCallPass(getMipsTargetMachine()));
+  }
   TargetPassConfig::addMachineSSAOptimization();
 }
 
