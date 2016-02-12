@@ -511,7 +511,7 @@ class MipsRelocLowerPat<SDNode addr> :
 
 // class MipsRelocLowerLoadPat<SDNode addr> :
 //       MipsPat<(i64 (extloadi32 (add GPR64:$hi, (Mips64Lower addr:$lo)))),
-//       (LW64 GPR64, \\base:(DSLL GPR64:$hi, 16) offset:addr:$lo\\)>;
+//       (LW64 GPR64, (DSLL GPR64:$hi, 16), addr:$lo)>;
 
 def : MipsRelocLowerPat<tglobaladdr>;
 //def : MipsRelocLowerLoadPat<tglobaladdr>;

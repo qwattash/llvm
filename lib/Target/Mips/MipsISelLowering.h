@@ -360,15 +360,16 @@ namespace llvm {
     template <class NodeTy>
     SDValue getAddrNonPIC(NodeTy *N, SDLoc DL, EVT Ty,
                           SelectionDAG &DAG, bool N64Ptrs=false) const {
-      
+
+      if (ABI.IsCheriSandbox())
+	Ty = MVT::i64;
       SDValue Hi = getTargetNode(N, Ty, DAG, MipsII::MO_ABS_HI);
       SDValue Lo = getTargetNode(N, Ty, DAG, MipsII::MO_ABS_LO);
-      
+      SDValue TmpNode;
       if (N64Ptrs) {
 	// 64-bit pointers, need additional relocations
 	SDValue Highest = getTargetNode(N, Ty, DAG, MipsII::MO_HIGHEST);
 	SDValue Higher = getTargetNode(N, Ty, DAG, MipsII::MO_HIGHER);
-	SDValue TmpNode;
 	TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
 			      DAG.getNode(MipsISD::Hi, DL, Ty, Highest),
 			      DAG.getNode(MipsISD::Lo, DL, Ty, Higher));
@@ -378,12 +379,14 @@ namespace llvm {
 	TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
 			      DAG.getNode(MipsISD::Lower, DL, Ty, Lo),
 			      TmpNode);
-	return TmpNode;
       }
       else
-	return DAG.getNode(ISD::ADD, DL, Ty,
-			   DAG.getNode(MipsISD::Hi, DL, Ty, Hi),
-			   DAG.getNode(MipsISD::Lo, DL, Ty, Lo));
+	 TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
+			       DAG.getNode(MipsISD::Hi, DL, Ty, Hi),
+			       DAG.getNode(MipsISD::Lo, DL, Ty, Lo));
+      if (ABI.IsCheriSandbox())
+        TmpNode = DAG.getNode(ISD::INTTOPTR, DL, MVT::iFATPTR, TmpNode);
+      return TmpNode;
     }
 
     // This method creates the following nodes, which are necessary for
