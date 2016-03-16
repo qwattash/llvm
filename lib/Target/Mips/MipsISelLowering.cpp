@@ -1727,7 +1727,10 @@ SDValue MipsTargetLowering::lowerBR_JT(SDValue Op, SelectionDAG &DAG) const {
                      MemVT, false, false, false, 0);
   Chain = Addr.getValue(1);
 
-  if ((getTargetMachine().getRelocationModel() == Reloc::PIC_) || ABI.IsN64()) {
+  bool AbiCalls = Subtarget.isABICalls();
+  if (AbiCalls && ((getTargetMachine().getRelocationModel() == Reloc::PIC_) || ABI.IsN64())) {
+    // XXX why in N64 the relocation is always assumed to be PIC?
+    
     // For PIC, the sequence is:
     // BRIND(load(Jumptable + index) + RelocBase)
     // RelocBase can be JumpTable, GOT or some sort of global base.
@@ -2008,8 +2011,8 @@ lowerJumpTable(SDValue Op, SelectionDAG &DAG) const
   JumpTableSDNode *N = cast<JumpTableSDNode>(Op);
   EVT Ty = Op.getValueType();
 
-  if (getTargetMachine().getRelocationModel() != Reloc::PIC_ && !ABI.IsN64())
-    return getAddrNonPIC(N, SDLoc(N), Ty, DAG);
+  if (getTargetMachine().getRelocationModel() != Reloc::PIC_ || Subtarget.isABICalls())
+    return getAddrNonPIC(N, SDLoc(N), Ty, DAG, ABI.IsN64());
 
   if (LargeGOT)
     return getAddrGlobalLargeGOT(N, SDLoc(N), Ty, DAG, MipsII::MO_GOT_HI16,
@@ -2025,6 +2028,9 @@ lowerConstantPool(SDValue Op, SelectionDAG &DAG) const
   ConstantPoolSDNode *N = cast<ConstantPoolSDNode>(Op);
   EVT Ty = Op.getValueType();
 
+  if (!Subtarget.isABICalls())
+    return getAddrNonPIC(N, SDLoc(N), Ty, DAG, ABI.IsN64());
+  
   if (getTargetMachine().getRelocationModel() != Reloc::PIC_ && !ABI.IsN64()) {
     const MipsTargetObjectFile *TLOF =
         static_cast<const MipsTargetObjectFile *>(
