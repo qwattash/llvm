@@ -2011,7 +2011,7 @@ lowerJumpTable(SDValue Op, SelectionDAG &DAG) const
   JumpTableSDNode *N = cast<JumpTableSDNode>(Op);
   EVT Ty = Op.getValueType();
 
-  if (getTargetMachine().getRelocationModel() != Reloc::PIC_ || Subtarget.isABICalls())
+  if (getTargetMachine().getRelocationModel() != Reloc::PIC_ || !Subtarget.isABICalls())
     return getAddrNonPIC(N, SDLoc(N), Ty, DAG, ABI.IsN64());
 
   if (LargeGOT)
@@ -4078,6 +4078,10 @@ bool MipsTargetLowering::isFPImmLegal(const APFloat &Imm, EVT VT) const {
 }
 
 unsigned MipsTargetLowering::getJumpTableEncoding() const {
+  // XXX is the ABICalls check correct or should we only check for the relocation model?
+  if (getTargetMachine().getRelocationModel() != Reloc::PIC_ || !Subtarget.isABICalls())
+    return MachineJumpTableInfo::EK_BlockAddress;
+    
   if (ABI.IsN64())
     return MachineJumpTableInfo::EK_GPRel64BlockAddress;
 
