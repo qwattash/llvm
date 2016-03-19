@@ -46,8 +46,11 @@ namespace llvm {
       Lo,
 
       // additional node used to represent additional Highest/Higher
-      // relocation operations. Hi, Lo are reused in this context.
-      Lower,
+      // relocation operations.
+      Hi64,
+      Lo64,
+      Highest,
+      Higher,
 
       // Handle gp_rel (small data/bss sections) relocation.
       GPRel,
@@ -371,13 +374,13 @@ namespace llvm {
 	SDValue Highest = getTargetNode(N, Ty, DAG, MipsII::MO_HIGHEST);
 	SDValue Higher = getTargetNode(N, Ty, DAG, MipsII::MO_HIGHER);
 	TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
-			      DAG.getNode(MipsISD::Hi, DL, Ty, Highest),
-			      DAG.getNode(MipsISD::Lo, DL, Ty, Higher));
+			      DAG.getNode(MipsISD::Highest, DL, Ty, Highest),
+			      DAG.getNode(MipsISD::Higher, DL, Ty, Higher));
 	TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
-			      DAG.getNode(MipsISD::Lower, DL, Ty, Hi),
+			      DAG.getNode(MipsISD::Hi64, DL, Ty, Hi),
 			      TmpNode);
 	TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
-			      DAG.getNode(MipsISD::Lower, DL, Ty, Lo),
+			      DAG.getNode(MipsISD::Lo64, DL, Ty, Lo),
 			      TmpNode);
       }
       else

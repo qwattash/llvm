@@ -125,7 +125,10 @@ const char *MipsTargetLowering::getTargetNodeName(unsigned Opcode) const {
   case MipsISD::TailCall:          return "MipsISD::TailCall";
   case MipsISD::Hi:                return "MipsISD::Hi";
   case MipsISD::Lo:                return "MipsISD::Lo";
-  case MipsISD::Lower:             return "MipsISD::Lower";
+  case MipsISD::Highest:           return "MipsISD::Highest";
+  case MipsISD::Higher:            return "MipsISD::Higher";
+  case MipsISD::Hi64:              return "MipsISD::Hi64";
+  case MipsISD::Lo64:              return "MipsISD::Lo64";
   case MipsISD::GPRel:             return "MipsISD::GPRel";
   case MipsISD::ThreadPointer:     return "MipsISD::ThreadPointer";
   case MipsISD::Ret:               return "MipsISD::Ret";
@@ -829,7 +832,7 @@ static SDValue performADDCombine(SDNode *N, SelectionDAG &DAG,
 
   SDValue Lo = Add.getOperand(1);
 
-  if ((Lo.getOpcode() != MipsISD::Lo) ||
+  if ((Lo.getOpcode() != MipsISD::Lo && Lo.getOpcode() != MipsISD::Lo64) ||
       (Lo.getOperand(0).getOpcode() != ISD::TargetJumpTable))
     return SDValue();
 

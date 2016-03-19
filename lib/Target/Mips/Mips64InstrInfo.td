@@ -488,38 +488,89 @@ def : MipsPat<(add GPR64:$hi, (MipsLo tglobaltlsaddr:$lo)),
               (DADDiu GPR64:$hi, tglobaltlsaddr:$lo)>;
 
 // highest/higher relocs
+// do we even need to keep 32-bit hi/lo relocation entries in 64-bit mode?
 
-// alternate Lower node for the lower 32-bit part of 64-bit relocations
-def Mips64Lower : SDNode<"MipsISD::Lower", SDTIntUnaryOp>;
+// Nodes for the for the 64-bit hi/lo relocations
+def Mips64Highest : SDNode<"MipsISD::Highest", SDTIntUnaryOp>;
+def Mips64Higher : SDNode<"MipsISD::Higher", SDTIntUnaryOp>;
+def Mips64Hi : SDNode<"MipsISD::Hi64", SDTIntUnaryOp>;
+def Mips64Lo : SDNode<"MipsISD::Lo64", SDTIntUnaryOp>;
 
-def : MipsPat<(Mips64Lower tglobaladdr:$in),
+def : MipsPat<(Mips64Highest tglobaladdr:$in), (LUi64 tglobaladdr:$in)>;
+def : MipsPat<(Mips64Highest tblockaddress:$in), (LUi64 tblockaddress:$in)>;
+def : MipsPat<(Mips64Highest tjumptable:$in), (LUi64 tjumptable:$in)>;
+def : MipsPat<(Mips64Highest tconstpool:$in), (LUi64 tconstpool:$in)>;
+def : MipsPat<(Mips64Highest tglobaltlsaddr:$in), (LUi64 tglobaltlsaddr:$in)>;
+def : MipsPat<(Mips64Highest texternalsym:$in), (LUi64 texternalsym:$in)>;
+
+def : MipsPat<(Mips64Higher tglobaladdr:$in),
               (DADDiu ZERO_64, tglobaladdr:$in)>;
-def : MipsPat<(Mips64Lower tblockaddress:$in),
+def : MipsPat<(Mips64Higher tblockaddress:$in),
               (DADDiu ZERO_64, tblockaddress:$in)>;
-def : MipsPat<(Mips64Lower tjumptable:$in),
+def : MipsPat<(Mips64Higher tjumptable:$in),
               (DADDiu ZERO_64, tjumptable:$in)>;
-def : MipsPat<(Mips64Lower tconstpool:$in),
+def : MipsPat<(Mips64Higher tconstpool:$in),
               (DADDiu ZERO_64, tconstpool:$in)>;
-def : MipsPat<(Mips64Lower tglobaltlsaddr:$in),
+def : MipsPat<(Mips64Higher tglobaltlsaddr:$in),
               (DADDiu ZERO_64, tglobaltlsaddr:$in)>;
-def : MipsPat<(Mips64Lower texternalsym:$in),
+def : MipsPat<(Mips64Higher texternalsym:$in),
               (DADDiu ZERO_64, texternalsym:$in)>;
 
-class MipsRelocLowerPat<SDNode addr> :
-      MipsPat<(add GPR64:$hi, (Mips64Lower addr:$lo)),
+def : MipsPat<(Mips64Hi tglobaladdr:$in),
+              (DADDiu ZERO_64, tglobaladdr:$in)>;
+def : MipsPat<(Mips64Hi tblockaddress:$in),
+              (DADDiu ZERO_64, tblockaddress:$in)>;
+def : MipsPat<(Mips64Hi tjumptable:$in),
+              (DADDiu ZERO_64, tjumptable:$in)>;
+def : MipsPat<(Mips64Hi tconstpool:$in),
+              (DADDiu ZERO_64, tconstpool:$in)>;
+def : MipsPat<(Mips64Hi tglobaltlsaddr:$in),
+              (DADDiu ZERO_64, tglobaltlsaddr:$in)>;
+def : MipsPat<(Mips64Hi texternalsym:$in),
+              (DADDiu ZERO_64, texternalsym:$in)>;
+
+def : MipsPat<(Mips64Lo tglobaladdr:$in),
+              (DADDiu ZERO_64, tglobaladdr:$in)>;
+def : MipsPat<(Mips64Lo tblockaddress:$in),
+              (DADDiu ZERO_64, tblockaddress:$in)>;
+def : MipsPat<(Mips64Lo tjumptable:$in),
+              (DADDiu ZERO_64, tjumptable:$in)>;
+def : MipsPat<(Mips64Lo tconstpool:$in),
+              (DADDiu ZERO_64, tconstpool:$in)>;
+def : MipsPat<(Mips64Lo tglobaltlsaddr:$in),
+              (DADDiu ZERO_64, tglobaltlsaddr:$in)>;
+def : MipsPat<(Mips64Lo texternalsym:$in),
+              (DADDiu ZERO_64, texternalsym:$in)>;
+
+class MipsRelocLowerPat<SDNode tgt, SDNode addr> :
+      MipsPat<(add GPR64:$hi, (tgt addr:$lo)),
               (DADDiu (DSLL GPR64:$hi, 16), addr:$lo)>;
 
 // class MipsRelocLowerLoadPat<SDNode addr> :
 //       MipsPat<(i64 (extloadi32 (add GPR64:$hi, (Mips64Lower addr:$lo)))),
 //       (LW64 GPR64, (DSLL GPR64:$hi, 16), addr:$lo)>;
 
-def : MipsRelocLowerPat<tglobaladdr>;
+def : MipsRelocLowerPat<Mips64Higher, tglobaladdr>;
 //def : MipsRelocLowerLoadPat<tglobaladdr>;
-def : MipsRelocLowerPat<tblockaddress>;
-def : MipsRelocLowerPat<tjumptable>;
-def : MipsRelocLowerPat<tconstpool>;
-def : MipsRelocLowerPat<tglobaltlsaddr>;
-def : MipsRelocLowerPat<texternalsym>;
+def : MipsRelocLowerPat<Mips64Higher, tblockaddress>;
+def : MipsRelocLowerPat<Mips64Higher, tjumptable>;
+def : MipsRelocLowerPat<Mips64Higher, tconstpool>;
+def : MipsRelocLowerPat<Mips64Higher, tglobaltlsaddr>;
+def : MipsRelocLowerPat<Mips64Higher, texternalsym>;
+
+def : MipsRelocLowerPat<Mips64Hi, tglobaladdr>;
+def : MipsRelocLowerPat<Mips64Hi, tblockaddress>;
+def : MipsRelocLowerPat<Mips64Hi, tjumptable>;
+def : MipsRelocLowerPat<Mips64Hi, tconstpool>;
+def : MipsRelocLowerPat<Mips64Hi, tglobaltlsaddr>;
+def : MipsRelocLowerPat<Mips64Hi, texternalsym>;
+
+def : MipsRelocLowerPat<Mips64Lo, tglobaladdr>;
+def : MipsRelocLowerPat<Mips64Lo, tblockaddress>;
+def : MipsRelocLowerPat<Mips64Lo, tjumptable>;
+def : MipsRelocLowerPat<Mips64Lo, tconstpool>;
+def : MipsRelocLowerPat<Mips64Lo, tglobaltlsaddr>;
+def : MipsRelocLowerPat<Mips64Lo, texternalsym>;
 
 // end Hi/Lo 64 bit relocations
 
