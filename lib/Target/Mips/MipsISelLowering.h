@@ -387,8 +387,12 @@ namespace llvm {
 	 TmpNode = DAG.getNode(ISD::ADD, DL, Ty,
 			       DAG.getNode(MipsISD::Hi, DL, Ty, Hi),
 			       DAG.getNode(MipsISD::Lo, DL, Ty, Lo));
-      if (ABI.IsCheriSandbox())
-        TmpNode = DAG.getNode(ISD::INTTOPTR, DL, MVT::iFATPTR, TmpNode);
+      // if (ABI.IsCheriSandbox())
+      // 	/* XXXAM: we do not know here if the addr is a function pointer
+      // 	   or a data pointer or do we?
+      // 	   Maybe this should be moved to the caller of this method
+      // 	*/
+      //   TmpNode = DAG.getNode(ISD::INTTOPTR, DL, MVT::iFATPTR, TmpNode);
       return TmpNode;
     }
 

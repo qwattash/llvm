@@ -1841,9 +1841,10 @@ SDValue MipsTargetLowering::lowerGlobalAddress(SDValue Op,
   bool AbiCalls = Subtarget.isABICalls();
   bool IsPIC = getTargetMachine().getRelocationModel() == Reloc::PIC_;
 
-  if (!AbiCalls)
-    // static hi/lo relocation
-    return getAddrNonPIC(N, SDLoc(N), Ty, DAG, ABI.IsN64());
+  // if (!IsPIC && !AbiCalls)
+  //   // static hi/lo relocation
+  //   // XXXAM: BUGGY stuff here bounds should be set as below!!
+  //   return getAddrNonPIC(N, SDLoc(N), Ty, DAG, ABI.IsN64());
   
   if (!IsPIC && !ABI.IsN64()) {
     const MipsTargetObjectFile *TLOF =
@@ -1862,7 +1863,9 @@ SDValue MipsTargetLowering::lowerGlobalAddress(SDValue Op,
     Ty = MVT::i64;
   SDValue Global;
 
-  if (LargeGOT)
+  if (!IsPIC && !AbiCalls)
+    Global = getAddrNonPIC(N, SDLoc(N), Ty, DAG, ABI.IsN64());
+  else if (LargeGOT)
     Global = getAddrGlobalLargeGOT(
         N, SDLoc(N), Ty, DAG, MipsII::MO_GOT_HI16, MipsII::MO_GOT_LO16,
         DAG.getEntryNode(),
